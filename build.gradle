@@ -17,11 +17,16 @@ allprojects {
         google()
         jcenter()
         mavenCentral()
+        maven {
+            url  "https://dl.bintray.com/adblockplus/maven"
+        }
+        mavenLocal()
     }
 }
 
 ext {
-    minSdkVersion = 19
+    // needed to change from 19 to 21 to support adblockplus
+    minSdkVersion = 21
     targetSdkVersion = 29
     buildToolsVersion = '29.0.2'
 }

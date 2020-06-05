@@ -260,6 +260,7 @@
     <string name="clear_web_storage_exit">Clear web storage on exit</string>
     <string name="message_web_storage_cleared">Web storage cleared</string>
     <string name="hosts_source">Hosts file ad blocking source</string>
+    <string name="settings_adblockplus">AdBlockPlus Settings</string>s
     <string name="settings_adblock">Ad Block Settings</string>
     <string name="tabs_in_drawer">Show tabs in navigation drawer</string>
     <string name="swap_bookmarks_and_tabs">Swap bookmark and tab drawers</string>
