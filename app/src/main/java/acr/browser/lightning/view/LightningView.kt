@@ -6,6 +6,7 @@ package acr.browser.lightning.view
 
 import acr.browser.lightning.Capabilities
 import acr.browser.lightning.R
+import acr.browser.lightning.browser.activity.BrowserActivity
 import acr.browser.lightning.constant.DESKTOP_USER_AGENT
 import acr.browser.lightning.controller.UIController
 import acr.browser.lightning.di.DatabaseScheduler
@@ -86,8 +87,7 @@ class LightningView(
      *
      * @return the WebView instance of the tab, which can be null.
      */
-    var webView: WebView? = null
-        private set
+    public var webView: WebView? = null
 
     private val uiController: UIController
     private val gestureDetector: GestureDetector
@@ -213,11 +213,13 @@ class LightningView(
         lightningWebClient = LightningWebClient(activity, this)
         gestureDetector = GestureDetector(activity, CustomGestureListener())
 
-        val tab = AdblockWebView(activity).also { webView = it }.apply {
+        val tab = (if (BrowserActivity.isAdblockWebView) AdblockWebView(activity) else WebView(activity)).also { webView = it }.apply {
             // set adblockprovider
-            setProvider(AdblockHelper.get().provider)
-            // add site keys configuration for whitelisting
-            siteKeysConfiguration = AdblockHelper.get().siteKeysConfiguration
+            if (this is AdblockWebView) {
+                setProvider(AdblockHelper.get().provider)
+                // add site keys configuration for whitelisting
+                siteKeysConfiguration = AdblockHelper.get().siteKeysConfiguration
+            }
 
             id = this@LightningView.id
 
@@ -267,7 +269,7 @@ class LightningView(
      * homepage, or loads the startpage or bookmark page if either of those are set as the homepage.
      */
     fun loadHomePage() {
-        reinitialize(homePageInitializer)
+        //reinitialize(homePageInitializer)
     }
 
     private fun reinitialize(tabInitializer: TabInitializer) {
@@ -687,7 +689,9 @@ class LightningView(
             tab.removeAllViews()
             tab.destroyDrawingCache()
             tab.destroy()
-            (tab as AdblockWebView)?.let { it.dispose(null)  }
+            if (BrowserActivity.isAdblockWebView) {
+                (tab as AdblockWebView)?.let { it.dispose(null) }
+            }
         }
     }
 

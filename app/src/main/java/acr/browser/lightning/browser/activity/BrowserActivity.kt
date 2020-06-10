@@ -67,6 +67,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.CustomViewCallback
+import android.webkit.WebView
 import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.TextView.OnEditorActionListener
@@ -173,6 +174,10 @@ abstract class BrowserActivity : ThemableBrowserActivity(), BrowserView, UIContr
 
     private val longPressBackRunnable = Runnable {
         showCloseDialog(tabsManager.positionOf(tabsManager.currentTab))
+    }
+
+    fun getWebViewForTesting() : WebView? {
+        return tabsManager.currentTab?.webView!!
     }
 
     /**
@@ -1793,6 +1798,8 @@ abstract class BrowserActivity : ThemableBrowserActivity(), BrowserView, UIContr
         }
 
     companion object {
+
+        var isAdblockWebView : Boolean = true
 
         private const val TAG = "BrowserActivity"
 
