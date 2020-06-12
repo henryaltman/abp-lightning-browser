@@ -168,14 +168,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="acr.browser.lightning.settings.activity.AdblockPlusSettingsActivity"
+            android:name=".settings.activity.AdblockPlusSettingsActivity"
             android:label="@string/settings_adblockplus"
             android:theme="@style/Theme.AppCompat.Light"
             android:exported="false">
-            <intent-filter>
-                <action android:name="acr.browser.lightning.settings.activity.AdblockPlusSettingsActivity"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
          </activity>
         <activity
             android:name=".reading.activity.ReadingActivity"

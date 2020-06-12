@@ -231,3 +231,9 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testLightningPlusDebugUni
             "outputs/code-coverage/connected/*coverage.ec"
     ])
 }
+// Adds package name to strings used to launch explicit abp settings activity on both packages
+afterEvaluate {
+    android.applicationVariants.all { variant ->
+        variant.resValue 'string', 'application_id', variant.applicationId
+    }
+}
