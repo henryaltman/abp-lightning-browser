@@ -181,16 +181,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation 'androidx.core:core-ktx:1.2.0-alpha04'
 
-    // adblock plus  webview and settings
-    final def libadblockplusVersion = '3.19'
-    implementation("org.adblockplus:adblock-android-webview:$libadblockplusVersion@aar") {
-        transitive = true
-        changing = true
-    }
-    implementation("org.adblockplus:adblock-android-settings:$libadblockplusVersion@aar") {
-        transitive = true
-        changing = true
-    }
+    implementation 'com.jakewharton.timber:timber:4.7.1'
 }
 
 kapt {

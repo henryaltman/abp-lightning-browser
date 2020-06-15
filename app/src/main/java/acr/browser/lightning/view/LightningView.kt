@@ -43,8 +43,6 @@ import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import org.adblockplus.libadblockplus.android.settings.AdblockHelper
-import org.adblockplus.libadblockplus.android.webview.AdblockWebView
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -213,12 +211,7 @@ class LightningView(
         lightningWebClient = LightningWebClient(activity, this)
         gestureDetector = GestureDetector(activity, CustomGestureListener())
 
-        val tab = AdblockWebView(activity).also { webView = it }.apply {
-            // set adblockprovider
-            setProvider(AdblockHelper.get().provider)
-            // add site keys configuration for whitelisting
-            siteKeysConfiguration = AdblockHelper.get().siteKeysConfiguration
-
+        val tab = WebView(activity).also { webView = it }.apply {
             id = this@LightningView.id
 
             isFocusableInTouchMode = true
@@ -687,7 +680,6 @@ class LightningView(
             tab.removeAllViews()
             tab.destroyDrawingCache()
             tab.destroy()
-            (tab as AdblockWebView)?.let { it.dispose(null)  }
         }
     }
 

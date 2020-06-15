@@ -24,9 +24,6 @@ import com.squareup.leakcanary.LeakCanary
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.plugins.RxJavaPlugins
-import org.adblockplus.libadblockplus.android.AdblockEngine
-import org.adblockplus.libadblockplus.android.AndroidHttpClientResourceWrapper
-import org.adblockplus.libadblockplus.android.settings.AdblockHelper
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 import javax.inject.Inject
@@ -55,21 +52,6 @@ class BrowserApp : Application() {
         // to log adblockplus messages
         if (BuildConfig.DEBUG) {
             Timber.plant(DebugTree())
-        }
-
-        if (!AdblockHelper.get().isInit) {
-            // init Adblock
-            val basePath = getDir(AdblockEngine.BASE_PATH_DIRECTORY, Context.MODE_PRIVATE).absolutePath
-            val map = mapOf(
-                    AndroidHttpClientResourceWrapper.EASYLIST to R.raw.easylist,
-                    AndroidHttpClientResourceWrapper.ACCEPTABLE_ADS to R.raw.exceptionrules
-            )
-            
-            AdblockHelper
-                    .get()
-                    .init(this, basePath, true, AdblockHelper.PREFERENCE_NAME)
-                    // adding preloaded subscription to improve app first boot time.
-                    .preloadSubscriptions(AdblockHelper.PRELOAD_PREFERENCE_NAME, map);
         }
 
         if (BuildConfig.DEBUG) {

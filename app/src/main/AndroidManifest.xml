@@ -168,12 +168,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".settings.activity.AdblockPlusSettingsActivity"
-            android:label="@string/settings_adblockplus"
-            android:theme="@style/Theme.AppCompat.Light"
-            android:exported="false">
-         </activity>
-        <activity
             android:name=".reading.activity.ReadingActivity"
             android:colorMode="wideColorGamut"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
