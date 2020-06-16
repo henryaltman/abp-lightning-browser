@@ -37,6 +37,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.URISyntaxException
@@ -119,6 +120,7 @@ class LightningWebClient(
     }
 
     override fun onPageFinished(view: WebView, url: String) {
+        Timber.d("onPageFinished called for url %s", url)
         if (view.isShown) {
             uiController.updateUrl(url, false)
             uiController.setBackButtonEnabled(view.canGoBack())
@@ -137,6 +139,7 @@ class LightningWebClient(
     }
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+        Timber.d("onPageStarted called for url %s", url)
         currentUrl = url
         // Only set the SSL state if there isn't an error for the current URL.
         if (urlWithSslError != url) {

@@ -87,7 +87,7 @@ class LightningView(
      *
      * @return the WebView instance of the tab, which can be null.
      */
-    public var webView: WebView? = null
+    var webView: WebView? = null
 
     private val uiController: UIController
     private val gestureDetector: GestureDetector
@@ -141,7 +141,7 @@ class LightningView(
     @Inject @field:MainScheduler internal lateinit var mainScheduler: Scheduler
     @Inject lateinit var networkConnectivityModel: NetworkConnectivityModel
 
-    private val lightningWebClient: LightningWebClient
+    val lightningWebClient: LightningWebClient
 
     private val networkDisposable: Disposable
 
@@ -269,7 +269,7 @@ class LightningView(
      * homepage, or loads the startpage or bookmark page if either of those are set as the homepage.
      */
     fun loadHomePage() {
-        //reinitialize(homePageInitializer)
+        reinitialize(homePageInitializer)
     }
 
     private fun reinitialize(tabInitializer: TabInitializer) {

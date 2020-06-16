@@ -26,36 +26,37 @@ import android.os.Build
 import android.os.Message
 import android.view.KeyEvent
 import android.webkit.*
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.rule.ActivityTestRule
+import junit.framework.Assert.assertTrue
 import org.adblockplus.libadblockplus.android.Utils
 import org.adblockplus.libadblockplus.android.settings.AdblockHelper
 import org.adblockplus.libadblockplus.android.webview.AdblockWebView
-import org.junit.Assert
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.Timeout
 import org.junit.runners.MethodSorters
 import timber.log.Timber
-import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class WebViewLoadUrlPerfTest {
-    private var webViewIdlingClient: WebViewIdlingClient? = null
+    private lateinit var webViewIdlingClient: WebViewIdlingClient
 
     @get:Rule
     val globalTimeout = Timeout.seconds(10000)
 
     @get:Rule
-    val activityRule: ActivityTestRule<MainActivity> = ActivityTestRule(MainActivity::class.java, false, false);
+    val activityRule: ActivityTestRule<MainActivity> = ActivityTestRule(MainActivity::class.java,
+            false, false)
 
-    private var totalPageLoadTime: Long = 0
+    private var totalPageLoadTime = 0L
     private fun addResultToMap(webView: WebView, url: String, loadTime: Long) {
+        Timber.d("Page `%s` has loaded in %s within ~%d seconds", url,
+                (if (webView is AdblockWebView) "AdblockWebView" else "WebView"), loadTime / 1000);
         totalPageLoadTime += loadTime
         if (webView is AdblockWebView) {
             adblockResults[url] = loadTime
@@ -64,11 +65,14 @@ class WebViewLoadUrlPerfTest {
         }
     }
 
-    inner class WebViewIdlingClient(val webView: WebView) : WebViewClient() {
+    inner class WebViewIdlingClient(val webView: WebView, val extWebViewClient: WebViewClient?) : WebViewClient() {
         private var countDownLatch: CountDownLatch? = null
         private var lastPageStartedUrl = ""
-        private var startTime = AtomicReference<Long?>(null)
-        private var extWebViewClient: WebViewClient? = null
+        private val startTime = AtomicReference<Long?>()
+
+        init {
+            webView.webViewClient = this
+        }
 
         fun setCountDownLatch(countDownLatch: CountDownLatch?) {
             this.countDownLatch = countDownLatch
@@ -76,7 +80,7 @@ class WebViewLoadUrlPerfTest {
         }
 
         fun resetTimer() {
-            startTime = AtomicReference(null)
+            startTime.set(null)
         }
 
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
@@ -86,7 +90,7 @@ class WebViewLoadUrlPerfTest {
                 startTime.set(System.currentTimeMillis())
             }
             if (extWebViewClient != null) {
-                extWebViewClient!!.onPageStarted(view, url, favicon)
+                extWebViewClient.onPageStarted(view, url, favicon)
             } else {
                 super.onPageStarted(view, url, favicon)
             }
@@ -112,7 +116,7 @@ class WebViewLoadUrlPerfTest {
                 countDownLatch!!.countDown()
             }
             if (extWebViewClient != null) {
-                extWebViewClient!!.onPageFinished(view, url)
+                extWebViewClient.onPageFinished(view, url)
             } else {
                 super.onPageFinished(view, url)
             }
@@ -130,20 +134,14 @@ class WebViewLoadUrlPerfTest {
         }
 
         override fun onLoadResource(view: WebView, url: String) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onLoadResource(view, url)
-            } else {
-                super.onLoadResource(view, url)
-            }
+            extWebViewClient?.onLoadResource(view, url)
+                    ?: super.onLoadResource(view, url)
         }
 
         @TargetApi(Build.VERSION_CODES.M)
         override fun onPageCommitVisible(view: WebView, url: String) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onPageCommitVisible(view, url)
-            } else {
-                super.onPageCommitVisible(view, url)
-            }
+            extWebViewClient?.onPageCommitVisible(view, url)
+                    ?: super.onPageCommitVisible(view, url)
         }
 
         @TargetApi(Build.VERSION_CODES.O)
@@ -155,86 +153,59 @@ class WebViewLoadUrlPerfTest {
         @TargetApi(Build.VERSION_CODES.O_MR1)
         override fun onSafeBrowsingHit(view: WebView, request: WebResourceRequest,
                                        threatType: Int, callback: SafeBrowsingResponse) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onSafeBrowsingHit(view, request, threatType, callback)
-            } else {
-                super.onSafeBrowsingHit(view, request, threatType, callback)
-            }
+            extWebViewClient?.onSafeBrowsingHit(view, request, threatType, callback)
+                    ?: super.onSafeBrowsingHit(view, request, threatType, callback)
         }
 
         override fun onReceivedClientCertRequest(view: WebView, request: ClientCertRequest) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedClientCertRequest(view, request)
-            } else {
-                super.onReceivedClientCertRequest(view, request)
-            }
+            extWebViewClient?.onReceivedClientCertRequest(view, request)
+                    ?: super.onReceivedClientCertRequest(view, request)
         }
 
         override fun onTooManyRedirects(view: WebView, cancelMsg: Message, continueMsg: Message) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onTooManyRedirects(view, cancelMsg, continueMsg)
-            } else {
-                super.onTooManyRedirects(view, cancelMsg, continueMsg)
-            }
+            extWebViewClient?.onTooManyRedirects(view, cancelMsg, continueMsg)
+                    ?: super.onTooManyRedirects(view, cancelMsg, continueMsg)
         }
 
-        override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedError(view, errorCode, description, failingUrl)
-            } else {
-                super.onReceivedError(view, errorCode, description, failingUrl)
-            }
+        override fun onReceivedError(view: WebView, errorCode: Int, description: String,
+                                     failingUrl: String) {
+            extWebViewClient?.onReceivedError(view, errorCode, description, failingUrl)
+                    ?: super.onReceivedError(view, errorCode, description, failingUrl)
         }
 
         @TargetApi(Build.VERSION_CODES.M)
-        override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedError(view, request, error)
-            } else {
-                super.onReceivedError(view, request, error)
-            }
+        override fun onReceivedError(view: WebView, request: WebResourceRequest,
+                                     error: WebResourceError) {
+            extWebViewClient?.onReceivedError(view, request, error)
+                    ?: super.onReceivedError(view, request, error)
         }
 
         override fun onFormResubmission(view: WebView, dontResend: Message, resend: Message) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onFormResubmission(view, dontResend, resend)
-            } else {
-                super.onFormResubmission(view, dontResend, resend)
-            }
+            extWebViewClient?.onFormResubmission(view, dontResend, resend)
+                    ?: super.onFormResubmission(view, dontResend, resend)
         }
 
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.doUpdateVisitedHistory(view, url, isReload)
-            } else {
-                super.doUpdateVisitedHistory(view, url, isReload)
-            }
+            extWebViewClient?.doUpdateVisitedHistory(view, url, isReload)
+                    ?: super.doUpdateVisitedHistory(view, url, isReload)
         }
 
         override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedSslError(view, handler, error)
-            } else {
-                super.onReceivedSslError(view, handler, error)
-            }
+            extWebViewClient?.onReceivedSslError(view, handler, error)
+                    ?: super.onReceivedSslError(view, handler, error)
         }
 
-        override fun onReceivedHttpAuthRequest(view: WebView, handler: HttpAuthHandler, host: String, realm: String) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedHttpAuthRequest(view, handler, host, realm)
-            } else {
-                super.onReceivedHttpAuthRequest(view, handler, host, realm)
-            }
+        override fun onReceivedHttpAuthRequest(view: WebView, handler: HttpAuthHandler, host: String,
+                                               realm: String) {
+            extWebViewClient?.onReceivedHttpAuthRequest(view, handler, host, realm)
+                    ?: super.onReceivedHttpAuthRequest(view, handler, host, realm)
         }
 
         @TargetApi(Build.VERSION_CODES.M)
         override fun onReceivedHttpError(view: WebView, request: WebResourceRequest,
                                          errorResponse: WebResourceResponse) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedHttpError(view, request, errorResponse)
-            } else {
-                super.onReceivedHttpError(view, request, errorResponse)
-            }
+            extWebViewClient?.onReceivedHttpError(view, request, errorResponse)
+                    ?: super.onReceivedHttpError(view, request, errorResponse)
         }
 
         override fun shouldOverrideKeyEvent(view: WebView, event: KeyEvent): Boolean {
@@ -243,45 +214,24 @@ class WebViewLoadUrlPerfTest {
         }
 
         override fun onUnhandledKeyEvent(view: WebView, event: KeyEvent) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onUnhandledKeyEvent(view, event)
-            } else {
-                super.onUnhandledKeyEvent(view, event)
-            }
+            extWebViewClient?.onUnhandledKeyEvent(view, event)
+                    ?: super.onUnhandledKeyEvent(view, event)
         }
 
         override fun onScaleChanged(view: WebView, oldScale: Float, newScale: Float) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onScaleChanged(view, oldScale, newScale)
-            } else {
-                super.onScaleChanged(view, oldScale, newScale)
-            }
+            extWebViewClient?.onScaleChanged(view, oldScale, newScale)
+                    ?: super.onScaleChanged(view, oldScale, newScale)
         }
 
         override fun onReceivedLoginRequest(view: WebView, realm: String, account: String?, args: String) {
-            if (extWebViewClient != null) {
-                extWebViewClient!!.onReceivedLoginRequest(view, realm, account, args)
-            } else {
-                super.onReceivedLoginRequest(view, realm, account, args)
-            }
+            extWebViewClient?.onReceivedLoginRequest(view, realm, account, args)
+                    ?: super.onReceivedLoginRequest(view, realm, account, args)
         }
 
         @TargetApi(Build.VERSION_CODES.LOLLIPOP)
         override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-            return if (extWebViewClient != null) {
-                extWebViewClient!!.shouldInterceptRequest(view, request)
-            } else {
-                super.shouldInterceptRequest(view, request)
-            }
-        }
-
-        init {
-            if (webView is AdblockWebView) {
-                extWebViewClient = webView.setWebViewClientForTesting(this)
-            } else {
-                extWebViewClient = webView.webViewClient
-                webView.webViewClient = this
-            }
+            return extWebViewClient?.shouldInterceptRequest(view, request)
+                    ?: super.shouldInterceptRequest(view, request)
         }
     }
 
@@ -292,18 +242,19 @@ class WebViewLoadUrlPerfTest {
         BrowserActivity.isAdblockWebView = isAdblockWebView
         val countDownLatch = CountDownLatch(2)
         activityRule.launchActivity(Intent())
-        val mainActivity: MainActivity = activityRule.getActivity()
-        mainActivity.runOnUiThread(Runnable {
-            webViewIdlingClient = mainActivity.getWebViewForTesting()?.let { WebViewIdlingClient(it) }
-            CookieManager.getInstance().removeAllCookies(ValueCallback { value ->
-                if (!value!!) {
-                    CookieManager.getInstance().removeAllCookie()
-                }
+        val mainActivity: MainActivity = activityRule.getActivity().apply {
+            runOnUiThread {
+                webViewIdlingClient = WebViewIdlingClient(getWebViewForTesting(), getWebViewClientForTesting())
+                CookieManager.getInstance().removeAllCookies(ValueCallback { value ->
+                    if (!value!!) {
+                        CookieManager.getInstance().removeAllCookie()
+                    }
+                    countDownLatch.countDown()
+                })
+                webViewIdlingClient.webView.clearCache(true)
                 countDownLatch.countDown()
-            })
-            webViewIdlingClient!!.webView.clearCache(true)
-            countDownLatch.countDown()
-        })
+            }
+        }
         try {
             countDownLatch.await()
         } catch (e: InterruptedException) {
@@ -320,19 +271,13 @@ class WebViewLoadUrlPerfTest {
      * Notes for QA (mostly).
      * Before running the tests one needs to install the test package and main application Android
      * package files (two separate .apk files) to current Android device or emulator. Currently those are:
-     * - ./adblock-android-webviewapp/build/outputs/apk/debug/adblock-android-webviewapp-debug.apk
-     * - ./adblock-android-webviewapp/build/outputs/apk/androidTest/debug/adblock-android-webviewapp-debug-androidTest.apk
+     * - ./app/build/outputs/apk/lightningLite/debug/app-lightningLite-debug.apk
+     * - ./app/build/outputs/apk/androidTest/lightningLite/debug/app-lightningLite-debug-androidTest.apk
      *
      * To run both test from CLI using ADB run:
-     * adb shell am instrument -w -e \
-     * class org.adblockplus.libadblockplus.android.webviewapp.test.WebViewEspressoTest \
-     * org.adblockplus.libadblockplus.android.webviewapp.test/androidx.test.runner.AndroidJUnitRunner
-     *
-     * Tu run specific test append #<testName>, f.e.:
-     * adb shell am instrument -w -e \
-     * *  class org.adblockplus.libadblockplus.android.webviewapp.test.WebViewEspressoTest#_1_testLoadTimeInSystemWebView \
-     * *  org.adblockplus.libadblockplus.android.webviewapp.test/androidx.test.runner.AndroidJUnitRunner
-    </testName> */
+     * adb shell am instrument -w -e class 'acr.browser.lightning.test.WebViewLoadUrlPerfTest' \
+     *   acr.browser.barebones.test/androidx.test.runner.AndroidJUnitRunner
+     */
     @LargeTest
     @Test
     @Throws(InterruptedException::class)
@@ -349,15 +294,17 @@ class WebViewLoadUrlPerfTest {
         setUp(true)
         commonTestLogic()
         Timber.d("testLoadTimeInAdblockWebView() total pages load time is %s ms", totalPageLoadTime)
-        activityRule.getActivity().runOnUiThread(Runnable { (webViewIdlingClient!!.webView as AdblockWebView).dispose(null) })
+        activityRule.getActivity().runOnUiThread {
+            (webViewIdlingClient.webView as AdblockWebView).dispose(null)
+        }
     }
 
     @Test // This is not a real test but it just helps to show most delayed pages
     fun _3_compareResults() {
         // Above this threshold delta is suspicious so let's not count it
-        val MAX_DELTA_THRESHOLD_MS: Long = 10000 // 10 seconds
-        var adblockFinalResult: Long = 0
-        var systemFinalResult: Long = 0
+        val MAX_DELTA_THRESHOLD_MS = 10000L // 10 seconds
+        var adblockFinalResult = 0L
+        var systemFinalResult = 0L
         for ((key, systemLoadTime) in systemResults) {
             // Check if entry exists in both maps and has valid value (value > 0)
             val adblockLoadTime = adblockResults[key]
@@ -381,77 +328,69 @@ class WebViewLoadUrlPerfTest {
         Timber.d("Adblock: compareResults() final pages load time is %s ms", adblockFinalResult)
         Timber.d("System: compareResults() final pages load time is %s ms", systemFinalResult)
         // Acceptance criteria: AdblockWebView adds no more than 10% delay on top of a system WebView
-        Assert.assertTrue(adblockFinalResult - systemFinalResult < systemFinalResult / 10)
+        assertTrue(adblockFinalResult - systemFinalResult < systemFinalResult / 10)
     }
 
     @Throws(InterruptedException::class)
     private fun commonTestLogic() {
-        val urls: ArrayList<String?> = object : ArrayList<String?>() {
-            init {
-                add("https://ess.jio.com")
-                add("https://www.jiocinema.com")
-                add("https://www.jiomart.com")
-                add("https://www.jio.com")
-                add("https://www.flipkart.com")
-                add("https://www.amazon.com")
-                add("https://www.news18.com")
-                add("https://timesofindia.indiatimes.com/")
-                add("https://www.ndtv.com/")
-                add("https://www.indiatoday.in/")
-                add("https://indianexpress.com/")
-                add("https://www.thehindu.com/")
-                add("https://www.news18.com/")
-                add("https://www.firstpost.com/")
-                //add("https://www.business-standard.com/");
-                //add("https://www.dnaindia.com/");
-                add("https://www.deccanchronicle.com/")
-                add("https://www.oneindia.com/")
-                add("https://scroll.in/")
-                add("https://www.financialexpress.com/")
-                //add("https://www.thehindubusinessline.com/");
-                add("https://www.outlookindia.com/")
-                add("https://www.thequint.com/")
-                add("https://www.freepressjournal.in/")
-                add("https://telanganatoday.com/")
-                add("https://www.asianage.com/")
-                add("https://www.tentaran.com/")
-                add("https://topyaps.com/")
-                add("http://www.socialsamosa.com/")
-                add("https://www.techgenyz.com/")
-                add("https://www.orissapost.com/")
-                add("http://www.teluguglobal.in/")
-                add("https://www.yovizag.com/")
-                add("http://www.abcrnews.com/")
-                add("http://www.navhindtimes.in/")
-                add("https://chandigarhmetro.com/")
-                add("https://starofmysore.com/")
-                //add("http://www.nagpurtoday.in/");
-                add("https://leagueofindia.com/")
-                add("https://arunachaltimes.in/")
-                add("https://www.latestnews1.com/")
-                add("https://knnindia.co.in/home")
-                add("https://newstodaynet.com/")
-                add("https://www.headlinesoftoday.com/")
-                add("https://www.gudstory.com/")
-                add("http://www.thetimesofbengal.com/")
-                add("http://www.risingkashmir.com/")
-                add("http://news.statetimes.in")
-                //add("https://newswithchai.com/");
-            }
-        }
+        val urls = listOf(
+            "https://ess.jio.com",
+            "https://www.jiocinema.com",
+            "https://www.jiomart.com",
+            "https://www.jio.com",
+            "https://www.flipkart.com",
+            "https://www.amazon.com",
+            "https://www.news18.com",
+            "https://timesofindia.indiatimes.com/",
+            "https://www.ndtv.com/",
+            "https://www.indiatoday.in/",
+            "https://www.thehindu.com/",
+            "https://www.news18.com/",
+            "https://www.firstpost.com/",
+            "https://www.deccanchronicle.com/",
+            "https://www.oneindia.com/",
+            "https://scroll.in/",
+            "https://www.financialexpress.com/",
+            "https://www.outlookindia.com/",
+            "https://www.thequint.com/",
+            "https://www.freepressjournal.in/",
+            "https://telanganatoday.com/",
+            "https://www.asianage.com/",
+            "https://www.tentaran.com/",
+            "https://topyaps.com/",
+            "http://www.socialsamosa.com/",
+            "https://www.techgenyz.com/",
+            "https://www.orissapost.com/",
+            "http://www.teluguglobal.in/",
+            "https://www.yovizag.com/",
+            "http://www.abcrnews.com/",
+            "http://www.navhindtimes.in/",
+            "https://chandigarhmetro.com/",
+            "https://starofmysore.com/",
+            "https://leagueofindia.com/",
+            "https://arunachaltimes.in/",
+            "https://www.latestnews1.com/",
+            "https://knnindia.co.in/home",
+            "https://newstodaynet.com/",
+            "https://www.headlinesoftoday.com/",
+            "https://www.gudstory.com/",
+            "http://www.thetimesofbengal.com/",
+            "http://www.risingkashmir.com/",
+            "http://news.statetimes.in"
+        )
         var repetitionCount = 1
         while (repetitionCount-- > 0) {
             for (url in urls) {
                 Timber.d("testLoadTime() loads %s", url)
                 val countDownLatch = CountDownLatch(1)
                 val mainActivity: MainActivity = activityRule.getActivity()
-                mainActivity.runOnUiThread(Runnable {
-                    webViewIdlingClient!!.setCountDownLatch(countDownLatch)
+                mainActivity.runOnUiThread {
+                    webViewIdlingClient.setCountDownLatch(countDownLatch)
                     mainActivity.getWebViewForTesting()?.loadUrl(url)
-                })
+                }
                 val hasFinished = countDownLatch.await(MAX_PAGE_LOAD_WAIT_TIME_SEC.toLong(), TimeUnit.SECONDS)
                 if (!hasFinished) {
-                    webViewIdlingClient!!.resetTimer()
+                    webViewIdlingClient.resetTimer()
                     Timber.w("Skipping url `%s` from measurement due to too long loading time in %s!",
                             url, if (mainActivity.getWebViewForTesting() is AdblockWebView) "AdblockWebView" else "WebView")
                 }
@@ -461,9 +400,8 @@ class WebViewLoadUrlPerfTest {
 
     companion object {
         private const val MAX_PAGE_LOAD_WAIT_TIME_SEC = 30
-
         // static data to keep state (results) between tests _1_ and _2_, then print in and _3_
-        private val adblockResults: MutableMap<String, Long> = HashMap()
-        private val systemResults: MutableMap<String, Long> = HashMap()
+        private val adblockResults = mutableMapOf<String, Long>()
+        private val systemResults = mutableMapOf<String, Long>()
     }
 }
