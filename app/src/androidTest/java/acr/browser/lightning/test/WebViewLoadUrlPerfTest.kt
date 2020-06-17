@@ -47,7 +47,7 @@ class WebViewLoadUrlPerfTest {
     private lateinit var webViewIdlingClient: WebViewIdlingClient
 
     @get:Rule
-    val globalTimeout = Timeout.seconds(10000)
+    val globalTimeout = Timeout(15, TimeUnit.MINUTES)
 
     @get:Rule
     val activityRule: ActivityTestRule<MainActivity> = ActivityTestRule(MainActivity::class.java,
@@ -86,14 +86,9 @@ class WebViewLoadUrlPerfTest {
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
             Timber.d("onPageStarted called for url %s", url)
             lastPageStartedUrl = url
-            if (startTime.get() == null) {
-                startTime.set(System.currentTimeMillis())
-            }
-            if (extWebViewClient != null) {
-                extWebViewClient.onPageStarted(view, url, favicon)
-            } else {
-                super.onPageStarted(view, url, favicon)
-            }
+            startTime.compareAndSet(null, System.currentTimeMillis())
+            extWebViewClient?.onPageStarted(view, url, favicon)
+                    ?: super.onPageStarted(view, url, favicon)
         }
 
         override fun onPageFinished(view: WebView, url: String) {
@@ -115,11 +110,8 @@ class WebViewLoadUrlPerfTest {
                 resetTimer()
                 countDownLatch!!.countDown()
             }
-            if (extWebViewClient != null) {
-                extWebViewClient.onPageFinished(view, url)
-            } else {
-                super.onPageFinished(view, url)
-            }
+            extWebViewClient?.onPageFinished(view, url)
+                    ?: super.onPageFinished(view, url)
         }
 
         @TargetApi(Build.VERSION_CODES.N)
@@ -242,11 +234,11 @@ class WebViewLoadUrlPerfTest {
         BrowserActivity.isAdblockWebView = isAdblockWebView
         val countDownLatch = CountDownLatch(2)
         activityRule.launchActivity(Intent())
-        val mainActivity: MainActivity = activityRule.getActivity().apply {
+        val mainActivity = activityRule.getActivity().apply {
             runOnUiThread {
                 webViewIdlingClient = WebViewIdlingClient(getWebViewForTesting(), getWebViewClientForTesting())
-                CookieManager.getInstance().removeAllCookies(ValueCallback { value ->
-                    if (!value!!) {
+                CookieManager.getInstance().removeAllCookies(ValueCallback { cookieRemoved ->
+                    if (!cookieRemoved!!) {
                         CookieManager.getInstance().removeAllCookie()
                     }
                     countDownLatch.countDown()
@@ -376,17 +368,46 @@ class WebViewLoadUrlPerfTest {
             "https://www.gudstory.com/",
             "http://www.thetimesofbengal.com/",
             "http://www.risingkashmir.com/",
-            "http://news.statetimes.in"
+            "http://news.statetimes.in",
+            "http://www.thenorthlines.com/",
+            "https://thelivenagpur.com/",
+            "https://doonhorizon.in/",
+            "http://creativebharat.com/",
+            "https://www.emitpost.com/",
+            "newsdeets.com",
+            "timesnowindia.com",
+            "sinceindependence.com",
+            "newsblare.com",
+            "delhincrnews.in",
+            "liveatnews.com",
+            "democraticjagat.com",
+            "bilkulonline.com",
+            "quintdaily.com",
+            "pressmirchi.com",
+            "notabletoday.blogspot.com",
+            "indiannewsqld.com.au",
+            "udaybulletin.com",
+            "jaianndata.com",
+            "campusbeat.in",
+            "ytosearch.com",
+            "thenewshimachal.com",
+            "sportskanazee.com",
+            "absoni12.blogspot.com",
+            "atulyaloktantranews.com"
         )
         var repetitionCount = 1
         while (repetitionCount-- > 0) {
             for (url in urls) {
-                Timber.d("testLoadTime() loads %s", url)
+                var fixedUrl = url;
+                if (!fixedUrl.startsWith("http")) {
+                    fixedUrl = "http://$url"
+                }
+                Timber.d("testLoadTime() loads %s", fixedUrl)
                 val countDownLatch = CountDownLatch(1)
-                val mainActivity: MainActivity = activityRule.getActivity()
+                val mainActivity = activityRule.getActivity()
                 mainActivity.runOnUiThread {
                     webViewIdlingClient.setCountDownLatch(countDownLatch)
-                    mainActivity.getWebViewForTesting()?.loadUrl(url)
+                    mainActivity.getWebViewForTesting().loadUrl(fixedUrl)
                 }
                 val hasFinished = countDownLatch.await(MAX_PAGE_LOAD_WAIT_TIME_SEC.toLong(), TimeUnit.SECONDS)
                 if (!hasFinished) {
