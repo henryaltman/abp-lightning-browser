@@ -74,7 +74,7 @@ class WebViewLoadUrlPerfTest {
             webView.webViewClient = this
         }
 
-        fun setCountDownLatch(countDownLatch: CountDownLatch?) {
+        fun setCountDownLatch(countDownLatch: CountDownLatch) {
             this.countDownLatch = countDownLatch
             lastPageStartedUrl = ""
         }
@@ -294,22 +294,32 @@ class WebViewLoadUrlPerfTest {
     @Test // This is not a real test but it just helps to show most delayed pages
     fun _3_compareResults() {
         // Above this threshold delta is suspicious so let's not count it
-        val MAX_DELTA_THRESHOLD_MS = 10000L // 10 seconds
+        val SECONDS_IN_MS = 1000L
+        val MAX_DELTA_THRESHOLD_SECONDS = 10
         var adblockFinalResult = 0L
         var systemFinalResult = 0L
+        var sameLoadTimeCount = 0
+        var totalNumberOfMeasuredUrls = 0
         for ((key, systemLoadTime) in systemResults) {
             // Check if entry exists in both maps and has valid value (value > 0)
             val adblockLoadTime = adblockResults[key]
             if (adblockLoadTime != null) {
                 if (adblockLoadTime > 0 && systemLoadTime > 0) {
-                    val diff = adblockLoadTime - systemLoadTime
-                    if (Math.abs(diff) > MAX_DELTA_THRESHOLD_MS) {
-                        Timber.d("Adblock is %s for %s of %d ms, rejecting this result!",
+                    val diff = (adblockLoadTime - systemLoadTime) / SECONDS_IN_MS
+                    if (Math.abs(diff) > MAX_DELTA_THRESHOLD_SECONDS) {
+                        Timber.d("Adblock is %s for `%s` of %d seconds, rejecting this result!",
                                 if (diff > 0) "slower" else "faster", key, Math.abs(diff))
                     } else {
-                        adblockFinalResult += adblockLoadTime
-                        systemFinalResult += systemLoadTime
+                        if (diff != 0L) {
+                            Timber.d("Adblock is %s for `%s` of %d seconds",
+                                    if (diff > 0) "slower" else "faster", key, Math.abs(diff))
+                        } else {
+                            ++sameLoadTimeCount
+                        }
+                        adblockFinalResult += adblockLoadTime / SECONDS_IN_MS
+                        systemFinalResult += systemLoadTime / SECONDS_IN_MS
                     }
+                    ++totalNumberOfMeasuredUrls
                 } else {
                     Timber.w("Skipping url `%s` from measurement due to lack of value!", key)
                 }
@@ -317,8 +327,10 @@ class WebViewLoadUrlPerfTest {
                 Timber.w("Skipping url `%s` from measurement as it was completed only in WebView!", key)
             }
         }
-        Timber.d("Adblock: compareResults() final pages load time is %s ms", adblockFinalResult)
-        Timber.d("System: compareResults() final pages load time is %s ms", systemFinalResult)
+        Timber.d("compareResults() load time was equal for %d urls out of %d measured",
+            sameLoadTimeCount, totalNumberOfMeasuredUrls)
+        Timber.d("Adblock: compareResults() final pages load time is %s seconds", adblockFinalResult)
+        Timber.d("System: compareResults() final pages load time is %s seconds", systemFinalResult)
         // Acceptance criteria: AdblockWebView adds no more than 10% delay on top of a system WebView
         assertTrue(adblockFinalResult - systemFinalResult < systemFinalResult / 10)
     }
