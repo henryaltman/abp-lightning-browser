@@ -67,6 +67,8 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient.CustomViewCallback
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.TextView.OnEditorActionListener
@@ -173,6 +175,14 @@ abstract class BrowserActivity : ThemableBrowserActivity(), BrowserView, UIContr
 
     private val longPressBackRunnable = Runnable {
         showCloseDialog(tabsManager.positionOf(tabsManager.currentTab))
+    }
+
+    fun getWebViewForTesting(): WebView {
+        return tabsManager.currentTab?.webView!!
+    }
+
+    fun getWebViewClientForTesting(): WebViewClient {
+        return tabsManager.currentTab?.lightningWebClient!!
     }
 
     /**
@@ -1793,6 +1803,10 @@ abstract class BrowserActivity : ThemableBrowserActivity(), BrowserView, UIContr
         }
 
     companion object {
+
+        // For automated testing purposes we want to switch between AdblockWebView and WebView
+        // in a runtime. By default app uses AdblockWebView.
+        var isAdblockWebView = true
 
         private const val TAG = "BrowserActivity"
 
