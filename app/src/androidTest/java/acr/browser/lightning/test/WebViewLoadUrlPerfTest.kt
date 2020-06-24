@@ -28,7 +28,7 @@ import android.view.KeyEvent
 import android.webkit.*
 import androidx.test.filters.LargeTest
 import androidx.test.rule.ActivityTestRule
-import junit.framework.Assert.assertTrue
+import junit.framework.Assert.fail
 import org.adblockplus.libadblockplus.android.Utils
 import org.adblockplus.libadblockplus.android.settings.AdblockHelper
 import org.adblockplus.libadblockplus.android.webview.AdblockWebView
@@ -52,6 +52,77 @@ class WebViewLoadUrlPerfTest {
     @get:Rule
     val activityRule: ActivityTestRule<MainActivity> = ActivityTestRule(MainActivity::class.java,
             false, false)
+
+    val urls = listOf(
+            "https://ess.jio.com",
+            "https://www.jiocinema.com",
+            "https://www.jiomart.com",
+            "https://www.jio.com",
+            "https://www.flipkart.com",
+            "https://www.amazon.com",
+            "https://www.news18.com",
+            "https://timesofindia.indiatimes.com/",
+            "https://www.ndtv.com/",
+            "https://www.indiatoday.in/",
+            "https://www.thehindu.com/",
+            "https://www.news18.com/",
+            "https://www.firstpost.com/",
+            "https://www.deccanchronicle.com/",
+            "https://www.oneindia.com/",
+            "https://scroll.in/",
+            "https://www.financialexpress.com/",
+            "https://www.outlookindia.com/",
+            "https://www.thequint.com/",
+            "https://www.freepressjournal.in/",
+            "https://telanganatoday.com/",
+            "https://www.asianage.com/",
+            "https://www.tentaran.com/",
+            "https://topyaps.com/",
+            "http://www.socialsamosa.com/",
+            "https://www.techgenyz.com/",
+            "https://www.orissapost.com/",
+            "http://www.teluguglobal.in/",
+            "https://www.yovizag.com/",
+            "http://www.abcrnews.com/",
+            "http://www.navhindtimes.in/",
+            "https://chandigarhmetro.com/",
+            "https://starofmysore.com/",
+            "https://leagueofindia.com/",
+            "https://arunachaltimes.in/",
+            "https://www.latestnews1.com/",
+            "https://knnindia.co.in/home",
+            "https://newstodaynet.com/",
+            "https://www.headlinesoftoday.com/",
+            "https://www.gudstory.com/",
+            "http://www.thetimesofbengal.com/",
+            "http://www.risingkashmir.com/",
+            "http://news.statetimes.in",
+            "http://www.thenorthlines.com/",
+            "https://thelivenagpur.com/",
+            "https://doonhorizon.in/",
+            "http://creativebharat.com/",
+            "https://www.emitpost.com/",
+            "newsdeets.com",
+            "timesnowindia.com",
+            "sinceindependence.com",
+            "newsblare.com",
+            "delhincrnews.in",
+            "liveatnews.com",
+            "democraticjagat.com",
+            "bilkulonline.com",
+            "quintdaily.com",
+            "pressmirchi.com",
+            "notabletoday.blogspot.com",
+            "indiannewsqld.com.au",
+            "udaybulletin.com",
+            "jaianndata.com",
+            "campusbeat.in",
+            "ytosearch.com",
+            "thenewshimachal.com",
+            "sportskanazee.com",
+            "absoni12.blogspot.com",
+            "atulyaloktantranews.com"
+    )
 
     private var totalPageLoadTime = 0L
     private fun addResultToMap(webView: WebView, url: String, loadTime: Long) {
@@ -332,86 +403,16 @@ class WebViewLoadUrlPerfTest {
         Timber.d("Adblock: compareResults() final pages load time is %s seconds", adblockFinalResult)
         Timber.d("System: compareResults() final pages load time is %s seconds", systemFinalResult)
         // Acceptance criteria: AdblockWebView adds no more than 10% delay on top of a system WebView
-        assertTrue("adblockFinalResult = ${adblockFinalResult} seconds, " +
+        fail("adblockFinalResult = ${adblockFinalResult} seconds, " +
                 "systemFinalResult = ${systemFinalResult} seconds, " +
                 "delta = ${adblockFinalResult - systemFinalResult} seconds, normalized delta = " +
-                "${(adblockFinalResult - systemFinalResult).toFloat() / systemFinalResult * 100}%",
-                adblockFinalResult - systemFinalResult < systemFinalResult / 10)
-
+                "${(adblockFinalResult - systemFinalResult).toFloat() / systemFinalResult * 100}%, " +
+                "urls counted = ${totalNumberOfMeasuredUrls} out of total ${urls.count()}, " +
+                "urls which loads the same time = ${sameLoadTimeCount}")
     }
 
     @Throws(InterruptedException::class)
     private fun commonTestLogic() {
-        val urls = listOf(
-            "https://ess.jio.com",
-            "https://www.jiocinema.com",
-            "https://www.jiomart.com",
-            "https://www.jio.com",
-            "https://www.flipkart.com",
-            "https://www.amazon.com",
-            "https://www.news18.com",
-            "https://timesofindia.indiatimes.com/",
-            "https://www.ndtv.com/",
-            "https://www.indiatoday.in/",
-            "https://www.thehindu.com/",
-            "https://www.news18.com/",
-            "https://www.firstpost.com/",
-            "https://www.deccanchronicle.com/",
-            "https://www.oneindia.com/",
-            "https://scroll.in/",
-            "https://www.financialexpress.com/",
-            "https://www.outlookindia.com/",
-            "https://www.thequint.com/",
-            "https://www.freepressjournal.in/",
-            "https://telanganatoday.com/",
-            "https://www.asianage.com/",
-            "https://www.tentaran.com/",
-            "https://topyaps.com/",
-            "http://www.socialsamosa.com/",
-            "https://www.techgenyz.com/",
-            "https://www.orissapost.com/",
-            "http://www.teluguglobal.in/",
-            "https://www.yovizag.com/",
-            "http://www.abcrnews.com/",
-            "http://www.navhindtimes.in/",
-            "https://chandigarhmetro.com/",
-            "https://starofmysore.com/",
-            "https://leagueofindia.com/",
-            "https://arunachaltimes.in/",
-            "https://www.latestnews1.com/",
-            "https://knnindia.co.in/home",
-            "https://newstodaynet.com/",
-            "https://www.headlinesoftoday.com/",
-            "https://www.gudstory.com/",
-            "http://www.thetimesofbengal.com/",
-            "http://www.risingkashmir.com/",
-            "http://news.statetimes.in",
-            "http://www.thenorthlines.com/",
-            "https://thelivenagpur.com/",
-            "https://doonhorizon.in/",
-            "http://creativebharat.com/",
-            "https://www.emitpost.com/",
-            "newsdeets.com",
-            "timesnowindia.com",
-            "sinceindependence.com",
-            "newsblare.com",
-            "delhincrnews.in",
-            "liveatnews.com",
-            "democraticjagat.com",
-            "bilkulonline.com",
-            "quintdaily.com",
-            "pressmirchi.com",
-            "notabletoday.blogspot.com",
-            "indiannewsqld.com.au",
-            "udaybulletin.com",
-            "jaianndata.com",
-            "campusbeat.in",
-            "ytosearch.com",
-            "thenewshimachal.com",
-            "sportskanazee.com",
-            "absoni12.blogspot.com",
-            "atulyaloktantranews.com"
-        )
         var repetitionCount = 1
         while (repetitionCount-- > 0) {
             for (url in urls) {
