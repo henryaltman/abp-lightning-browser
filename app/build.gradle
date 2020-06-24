@@ -199,7 +199,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.2.0-alpha04'
 
     // adblock plus  webview and settings
-    final def libadblockplusVersion = '3.19'
+    final def libadblockplusVersion = '3.20'
     implementation("org.adblockplus:adblock-android-webview:$libadblockplusVersion@aar") {
         transitive = true
         changing = true
