@@ -1,0 +1,68 @@
+image: registry.gitlab.com/eyeo/docker/libadblockplus-android_gitlab-runner:202004.1
+
+# Disable the Gradle daemon for Continuous Integration servers as correctness
+# is usually a priority over speed in CI environments. Using a fresh
+# runtime for each build is more reliable since the runtime is completely
+# isolated from any previous builds.
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+build:
+  stage: build
+  script: ./gradlew assemble assembleAndroidTest
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    paths:
+      - "app/build/outputs/apk/**/debug/*.apk"
+
+unit_test:
+  stage: test
+  script: ./gradlew test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    reports:
+      junit: "app/build/test-results/**/TEST-*.xml"
+
+testobject_tests:
+  stage: test
+  script:
+    - test -z ${TESTOBJ_PROJECT_KEY} && echo "echo TESTOBJ_PROJECT_KEY not set. Unable to run tests." && exit 1
+    - test -f /opt/ci/runner.jar || wget https://s3.amazonaws.com/saucelabs-runner/v1.8/runner.jar -O /opt/ci/runner.jar
+    # Docs for running tests on testobject:
+    # https://wiki.saucelabs.com/display/DOCS/Command+Reference+for+Sauce+Runner+for+Real+Devices
+    # Note - we start all tests concurrently and `wait` for them to finish. Non-zero exit codes are preserved.
+    - |
+      pids=""
+      for APP in Lite Plus
+        do echo "Testing $APP"
+        java -jar /opt/ci/runner.jar espresso \
+          --test app/build/outputs/apk/androidTest/lightning${APP}/debug/app-lightning${APP}-debug-androidTest.apk \
+          --app app/build/outputs/apk/lightning${APP}/debug/app-lightning${APP}-debug.apk \
+          --device Google_Pixel_3a_XL_real \
+          --testname ${CI_JOB_URL} \
+          --apikey ${TESTOBJ_PROJECT_KEY} --datacenter EU &
+        pids="$pids $!"
+      done
+      wait $pids
+  artifacts:
+    reports:
+      junit: philll-*.xml
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - .gradle

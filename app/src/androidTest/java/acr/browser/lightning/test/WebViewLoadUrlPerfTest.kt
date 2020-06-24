@@ -332,7 +332,12 @@ class WebViewLoadUrlPerfTest {
         Timber.d("Adblock: compareResults() final pages load time is %s seconds", adblockFinalResult)
         Timber.d("System: compareResults() final pages load time is %s seconds", systemFinalResult)
         // Acceptance criteria: AdblockWebView adds no more than 10% delay on top of a system WebView
-        assertTrue(adblockFinalResult - systemFinalResult < systemFinalResult / 10)
+        assertTrue("adblockFinalResult = ${adblockFinalResult} seconds, " +
+                "systemFinalResult = ${systemFinalResult} seconds, " +
+                "delta = ${adblockFinalResult - systemFinalResult} seconds, normalized delta = " +
+                "${(adblockFinalResult - systemFinalResult).toFloat() / systemFinalResult * 100}%",
+                adblockFinalResult - systemFinalResult < systemFinalResult / 10)
+
     }
 
     @Throws(InterruptedException::class)
