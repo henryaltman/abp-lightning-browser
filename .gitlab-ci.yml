@@ -46,7 +46,7 @@ testobject_tests:
     # Note - we start all tests concurrently and `wait` for them to finish. Non-zero exit codes are preserved.
     - |
       pids=""
-      for APP in Lite Plus
+      for APP in Lite
         do echo "Testing $APP"
         java -jar /opt/ci/runner.jar espresso \
           --test app/build/outputs/apk/androidTest/lightning${APP}/debug/app-lightning${APP}-debug-androidTest.apk \
