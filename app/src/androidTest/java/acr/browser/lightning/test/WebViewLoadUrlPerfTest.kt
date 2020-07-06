@@ -16,6 +16,7 @@
  */
 package acr.browser.lightning.test
 
+import acr.browser.lightning.BuildConfig
 import acr.browser.lightning.MainActivity
 import acr.browser.lightning.browser.activity.BrowserActivity
 import android.annotation.TargetApi
@@ -53,7 +54,9 @@ class WebViewLoadUrlPerfTest {
     val activityRule: ActivityTestRule<MainActivity> = ActivityTestRule(MainActivity::class.java,
             false, false)
 
-    val urls = listOf(
+    val MAX_PAGE_LOAD_WAIT_TIME_SECONDS = BuildConfig.PERF_MAX_PAGE_LOAD_TIME ?: 30
+    val MAX_DELTA_THRESHOLD_SECONDS =  BuildConfig.PERF_MAX_DELTA ?: 10
+    val urls = BuildConfig.PERF_TEST_URLS?.toList() ?: listOf(
             "https://ess.jio.com",
             "https://www.jiocinema.com",
             "https://www.jiomart.com",
@@ -65,7 +68,6 @@ class WebViewLoadUrlPerfTest {
             "https://www.ndtv.com/",
             "https://www.indiatoday.in/",
             "https://www.thehindu.com/",
-            "https://www.news18.com/",
             "https://www.firstpost.com/",
             "https://www.deccanchronicle.com/",
             "https://www.oneindia.com/",
@@ -122,7 +124,7 @@ class WebViewLoadUrlPerfTest {
             "sportskanazee.com",
             "absoni12.blogspot.com",
             "atulyaloktantranews.com"
-    )
+    ).distinct()
 
     private var totalPageLoadTime = 0L
     private fun addResultToMap(webView: WebView, url: String, loadTime: Long) {
@@ -366,7 +368,6 @@ class WebViewLoadUrlPerfTest {
     fun _3_compareResults() {
         // Above this threshold delta is suspicious so let's not count it
         val SECONDS_IN_MS = 1000L
-        val MAX_DELTA_THRESHOLD_SECONDS = 10
         var adblockFinalResult = 0L
         var systemFinalResult = 0L
         var sameLoadTimeCount = 0
@@ -377,7 +378,7 @@ class WebViewLoadUrlPerfTest {
             if (adblockLoadTime != null) {
                 if (adblockLoadTime > 0 && systemLoadTime > 0) {
                     val diff = (adblockLoadTime - systemLoadTime) / SECONDS_IN_MS
-                    if (Math.abs(diff) > MAX_DELTA_THRESHOLD_SECONDS) {
+                    if (MAX_DELTA_THRESHOLD_SECONDS > 0 && Math.abs(diff) > MAX_DELTA_THRESHOLD_SECONDS) {
                         Timber.d("Adblock is %s for `%s` of %d seconds, rejecting this result!",
                                 if (diff > 0) "slower" else "faster", key, Math.abs(diff))
                     } else {
@@ -389,8 +390,8 @@ class WebViewLoadUrlPerfTest {
                         }
                         adblockFinalResult += adblockLoadTime / SECONDS_IN_MS
                         systemFinalResult += systemLoadTime / SECONDS_IN_MS
+                        ++totalNumberOfMeasuredUrls
                     }
-                    ++totalNumberOfMeasuredUrls
                 } else {
                     Timber.w("Skipping url `%s` from measurement due to lack of value!", key)
                 }
@@ -428,19 +429,23 @@ class WebViewLoadUrlPerfTest {
                     webViewIdlingClient.setCountDownLatch(countDownLatch)
                     mainActivity.getWebViewForTesting().loadUrl(fixedUrl)
                 }
-                val hasFinished = countDownLatch.await(MAX_PAGE_LOAD_WAIT_TIME_SEC.toLong(), TimeUnit.SECONDS)
-                if (!hasFinished) {
-                    webViewIdlingClient.resetTimer()
-                    Timber.w("Skipping url `%s` from measurement due to too long loading time in %s!",
-                            url, if (mainActivity.getWebViewForTesting() is AdblockWebView) "AdblockWebView" else "WebView")
+
+                if (MAX_PAGE_LOAD_WAIT_TIME_SECONDS > 0) {
+                    if (!countDownLatch.await(MAX_PAGE_LOAD_WAIT_TIME_SECONDS.toLong(), TimeUnit.SECONDS)) {
+                        Timber.w("Skipping url `%s` from measurement due to too long loading time in %s!",
+                                url, if (mainActivity.getWebViewForTesting() is AdblockWebView) "AdblockWebView" else "WebView")
+                    }
                 }
+                else {
+                    countDownLatch.await()
+                }
+                webViewIdlingClient.resetTimer()
             }
         }
     }
 
     companion object {
-        private const val MAX_PAGE_LOAD_WAIT_TIME_SEC = 30
-        // static data to keep state (results) between tests _1_ and _2_, then print in and _3_
+        // static data to keep state (results) between tests _1_ and _2_, then print it from test _3_
         private val adblockResults = mutableMapOf<String, Long>()
         private val systemResults = mutableMapOf<String, Long>()
     }
