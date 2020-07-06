@@ -6,6 +6,10 @@ image: registry.gitlab.com/eyeo/docker/libadblockplus-android_gitlab-runner:2020
 # isolated from any previous builds.
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  ABP_VERSION: ${ABP_VERSION:-""}
+  PERF_TEST_URLS: ${PERF_TEST_URLS:-""}
+  PERF_MAX_PAGE_LOAD_TIME: ${PERF_MAX_PAGE_LOAD_TIME:-""}
+  PERF_MAX_DELTA: ${PERF_MAX_DELTA:-""}
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle

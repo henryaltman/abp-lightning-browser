@@ -27,6 +27,24 @@ android {
         versionName "5.1.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        if (System.getenv('PERF_TEST_URLS')) {
+            println "Using test urls for performance test: " + System.getenv('PERF_TEST_URLS')
+            buildConfigField "String[]", "PERF_TEST_URLS", "{" + System.getenv('PERF_TEST_URLS') + "}"
+        } else {
+            buildConfigField "String[]", "PERF_TEST_URLS", "null"
+        }
+        if (System.getenv('PERF_MAX_PAGE_LOAD_TIME')) {
+            println "Using max page load time for performance test: " + System.getenv('PERF_MAX_PAGE_LOAD_TIME')
+            buildConfigField "Integer", "PERF_MAX_PAGE_LOAD_TIME", System.getenv('PERF_MAX_PAGE_LOAD_TIME')
+        } else {
+            buildConfigField "Integer", "PERF_MAX_PAGE_LOAD_TIME", "null"
+        }
+        if (System.getenv('PERF_MAX_DELTA')) {
+            println "Using max load delta for performance test: " + System.getenv('PERF_MAX_DELTA')
+            buildConfigField "Integer", "PERF_MAX_DELTA", System.getenv('PERF_MAX_DELTA')
+        } else {
+            buildConfigField "Integer", "PERF_MAX_DELTA", "null"
+        }
     }
 
     sourceSets {
@@ -199,7 +217,11 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.2.0-alpha04'
 
     // adblock plus  webview and settings
-    final def libadblockplusVersion = '3.20'
+    def libadblockplusVersion = '3.21'
+    if (System.getenv('ABP_VERSION')) {
+        libadblockplusVersion = System.getenv('ABP_VERSION')
+    }
+    println "Using ABP versions $libadblockplusVersion"
     implementation("org.adblockplus:adblock-android-webview:$libadblockplusVersion@aar") {
         transitive = true
         changing = true
