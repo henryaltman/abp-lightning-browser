@@ -181,7 +181,7 @@ class WebViewLoadUrlPerfTest {
                     addResultToMap(webView, Utils.getUrlWithoutParams(url), timeDelta)
                 }
                 resetTimer()
-                countDownLatch!!.countDown()
+                countDownLatch?.countDown()
             }
             extWebViewClient?.onPageFinished(view, url)
                     ?: super.onPageFinished(view, url)

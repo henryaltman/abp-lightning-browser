@@ -217,7 +217,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.2.0-alpha04'
 
     // adblock plus  webview and settings
-    def libadblockplusVersion = '3.21'
+    def libadblockplusVersion = '3.23'
     if (System.getenv('ABP_VERSION')) {
         libadblockplusVersion = System.getenv('ABP_VERSION')
     }
