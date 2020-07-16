@@ -329,6 +329,7 @@ class WebViewLoadUrlPerfTest {
             Timber.d("Before FE waitForReady()")
             AdblockHelper.get().provider.waitForReady()
             Timber.d("After FE waitForReady()")
+            AdblockHelper.get().provider.engine.setAcceptableAdsEnabled(false)
         }
     }
 

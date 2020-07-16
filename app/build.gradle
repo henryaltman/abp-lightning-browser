@@ -221,15 +221,13 @@ dependencies {
     if (System.getenv('ABP_VERSION')) {
         libadblockplusVersion = System.getenv('ABP_VERSION')
     }
-    println "Using ABP versions $libadblockplusVersion"
-    implementation("org.adblockplus:adblock-android-webview:$libadblockplusVersion@aar") {
-        transitive = true
-        changing = true
-    }
-    implementation("org.adblockplus:adblock-android-settings:$libadblockplusVersion@aar") {
-        transitive = true
-        changing = true
-    }
+    implementation files('libs/adblock-android-abi_all-release.aar')
+    implementation files('libs/adblock-android-settings-release.aar')
+    implementation files('libs/adblock-android-webview-release.aar')
+
+    implementation "androidx.preference:preference:1.1.0"
+    implementation 'com.jakewharton.timber:timber:4.7.1'
+
 }
 
 kapt {
