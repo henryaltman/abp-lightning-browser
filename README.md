@@ -1,70 +1,35 @@
-# Lightning Browser [![Build Status](https://travis-ci.org/anthonycr/Lightning-Browser.svg?branch=master)](https://travis-ci.org/anthonycr/Lightning-Browser)
+# Lightning Browser Adblock Plus Android SDK integration
 
-#### Speed, Simplicity, Security
-![](launcher_icon_small.png)
+### Purpose
 
-#### Download
-[<img src="https://f-droid.org/badge/get-it-on.png"
-      alt="Get it on F-Droid"
-      height="80">](https://f-droid.org/app/acr.browser.lightning) [<img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" 
-alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=acr.browser.lightning)
+This is a fork of [Lightning Browser](https://github.com/anthonycr/Lightning-Browser) with integrated [Adblock Plus Android SDK](https://gitlab.com/eyeo/adblockplus/libadblockplus-android). It is created to provide the reference implementation of Adblock Plus Android SDK browser integration.
 
-#### Master Branch
-* [![Build Status](https://travis-ci.org/anthonycr/Lightning-Browser.svg?branch=master)](https://travis-ci.org/anthonycr/Lightning-Browser)
+### Disclaimer
 
-#### Dev Branch
-* [![Build Status](https://travis-ci.org/anthonycr/Lightning-Browser.svg?branch=dev)](https://travis-ci.org/anthonycr/Lightning-Browser)
+Be aware that there are NO GUARANTEES for stability and availability of the Reference Implementation! We believe that the Lightning Browser is stable, as are the Adblock Plus code and Adblock Plus integration changes, but the resulting application is not tested to be production ready.
 
-#### Features
-* Bookmarks
+### Features
 
-* History
+This reference integration inherits all the Lightning Browser [features](https://github.com/anthonycr/Lightning-Browser#features), adding [the Adblock Plus features](https://adblockplus.org/features). The Lightning Browser already contains an adblocking solution. It is shown as `Ad Block Settings` in Settings, while Adblock Plus is added as `Adblock Plus`.
+* Adblock Plus with Acceptable Ads.
 
-* Multiple search engines (Google, Bing, Yahoo, StartPage, DuckDuckGo, etc.)
+* AdBlock Plus Settings interface.
 
-* Incognito mode
 
-* Follows Google design guidelines
-
-* Unique utilization of navigation drawer for tabs
-
-* Google search suggestions
-
-* Orbot Proxy support and I2P support
-
-#### Permissions
-
-##### Automatically granted
-* `INTERNET`: necessary to access the internet.
-* `ACCESS_NETWORK_STATE`: used by the browser to stop loading resources when network access is lost.
-* `INSTALL_SHORTCUT`: used to add shortcuts with the "Add to home screen" option.
-
-##### Requested only when needed
-* `WRITE_EXTERNAL_STORAGE`: needed to download files and export bookmarks.
-* `READ_EXTERNAL_STORAGE`: needed to download files and import bookmarks.
-* `ACCESS_FINE_LOCATION`: needed for sites like Google Maps, requires "Location access" option to be enabled (default disabled).
-* `RECORD_AUDIO`: needed to support WebRTC, requires "WebRTC Support" option to be enabled (default disabled).
-* `CAMERA`: needed to support WebRTC, requires "WebRTC Support" option to be enabled (default disabled).
-* `MODIFY_AUDIO_SETTINGS`: needed to support WebRTC, requires "WebRTC Support" option to be enabled (default disabled).
-
-#### The Code
-* Please contribute code back if you can. The code isn't perfect.
-* Please add translations/translation fixes as you see need
-
-#### Contributing
-* [The Trello Board](https://trello.com/b/Gwjx8MC3/lightning-browser)
-* Contributions are always welcome
-* Make pull requests into the `dev` branch.
-
-#### License
-```
-Copyright 2014 Anthony Restaino
-
-Lightning Browser
-
-   This Source Code Form is subject to the terms of the 
-   Mozilla Public License, v. 2.0. If a copy of the MPL 
-   was not distributed with this file, You can obtain one at 
-   
-   http://mozilla.org/MPL/2.0/
-```
+### Implementation details
+#### Adblock Plus Engine
+The Adblock Plus Engine is required for AdblockWebView to function, and should be initialized as early as possible. The Engine is is integrated by adding [imports](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/java/acr/browser/lightning/BrowserApp.kt#L27) and [initialization](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/java/acr/browser/lightning/BrowserApp.kt#L60) (via `AdblockHelper`) to `BrowserApp.kt`. Please note the [Timber](https://github.com/JakeWharton/timber) initialization [a bit earlier](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/java/acr/browser/lightning/BrowserApp.kt#L55).
+#### AdblockWebView
+AdblockWebView is integrated by adding [imports](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blame/master/app/src/main/java/acr/browser/lightning/view/LightningView.kt#L47) and changing the construction of WebView to that of [AdblockWebView](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blame/master/app/src/main/java/acr/browser/lightning/view/LightningView.kt#L216) to `LightningView.kt`. An important part is [the disposal](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blame/master/app/src/main/java/acr/browser/lightning/view/LightningView.kt#L692) of AdblockWebView.
+##### AdblockWebView testing adaptation
+To make it easy to switch between Android WebView and AdblockWebView at runtime, a new variable [isAdblockWebView is introduced](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/java/acr/browser/lightning/browser/activity/BrowserActivity.kt#L1809) in `BrowserActivity.kt`.
+#### Settings
+The settings are integrated by adding the [Settings Activity for Adblock Plus](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/java/acr/browser/lightning/settings/activity/AdblockPlusSettingsActivity.kt) (`AdblockPlusSettingsActivity.kt`) and adding the [header entry](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/res/xml/preferences_headers.xml#L3) for the Activity. There is also a [string resource](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/main/res/values/strings.xml#L263) for Adblock Plus Settings.
+We had to create a separate activity to host our settings fragments as a workaround.
+#### Resources
+There are two preloaded files for the subscriptions: `easylist.txt` and `exceptionrules.txt`. The files are also updated by a [gradle task](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/build.gradle#L11). Having those files included in the application allows Adblock Plus to function properly even before the subscriptions are downloaded for the first time.
+#### Build tools
+* The root `build.gradle` now has an entry for [maven repo for Adblockplus](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/build.gradle#L20) (it is downloaded as an AAR) and sets `minSdkVersion = 21`.
+* `app\build.gradle` now has entries for [adblock plus webview and settings](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/build.gradle#L219) and [other settings](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/build.gradle#L273).
+#### Testing
+There is a [WebViewLoadUrlPerfTest.kt](https://gitlab.com/eyeo/adblockplus/abp-lightning-browser/-/blob/master/app/src/androidTest/java/acr/browser/lightning/test/WebViewLoadUrlPerfTest.kt) test that aims to compare page load times in Android WebView and AdblockWebView, and also does some analysis on the load times.
