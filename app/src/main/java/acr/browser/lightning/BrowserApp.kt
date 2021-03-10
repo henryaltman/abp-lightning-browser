@@ -56,10 +56,8 @@ class BrowserApp : Application() {
         if (BuildConfig.DEBUG) {
             // allow WebView debugging in "Debug" build variant
             // https://developers.google.com/web/tools/chrome-devtools/remote-debugging/webviews
-            if (BuildConfig.DEBUG)
-            {
-                WebView.setWebContentsDebuggingEnabled(true);
-            }
+
+            WebView.setWebContentsDebuggingEnabled(true);
             Timber.plant(DebugTree())
         }
 
