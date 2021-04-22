@@ -18,9 +18,8 @@ allprojects {
         jcenter()
         mavenCentral()
         maven {
-            url  "https://dl.bintray.com/adblockplus/maven"
+            url 'https://gitlab.com/api/v4/projects/8817162/packages/maven'
         }
-        mavenLocal()
     }
 }
 
